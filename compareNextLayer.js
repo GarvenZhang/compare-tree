@@ -1,11 +1,12 @@
 import {
-  toString
+  toString,
+  isDOM
 } from './utils'
 import {
   deletedList,
   addedList,
   changedList
-} from './data'
+} from './commonVar'
 
 let baseCur
 let refCur
@@ -19,6 +20,8 @@ let baseCurValue
 let name
 let type
 
+// 作用域链的总结
+// 确认输入输出, 即可对函数有思路了
 
 /**
  * 转换Map为Object
@@ -141,10 +144,10 @@ const objectHandle = () => {
 
   // 层级: [路径] \n 新增: [新增] \n 删除: [删除]
   baseQueue.forEach(function (item) {
-    deletedList.push(['【删除了】: ', name + item, '\n值为:', baseCurValue[item]])
+    deletedList.push(['【删除了】: ', name + item, '\n值为: ', baseCurValue[item]])
   })
   refQueue.forEach(function (item) {
-    addedList.push(['【新增了】: ', name + item, '\n值为:', refCur[item]])
+    addedList.push(['【新增了】: ', name + item, '\n值为: ', refCur[item]])
   })
 
   // 比较
@@ -172,10 +175,10 @@ const arrayHandle = () => {
 
   // log
   baseQueue.forEach(function (item, index) {
-    deletedList.push(['【删除了】: ', name + index, '\n值为:', item])
+    deletedList.push(['【删除了】: ', name + index, '\n值为: ', item])
   })
   refQueue.forEach(function (item, index) {
-    addedList.push(['【新增了】: ', name + index, '\n值为:', item])
+    addedList.push(['【新增了】: ', name + index, '\n值为: ', item])
   })
 
   // 比较
@@ -189,6 +192,7 @@ const arrayHandle = () => {
  * @return {{base: Object, ref: Object}}
  */
 export default function (_baseCur, _refCur) {
+  
   // 初始化
   baseCur = _baseCur
   refCur = _refCur
@@ -204,7 +208,6 @@ export default function (_baseCur, _refCur) {
 
   // 可遍历
   switch (type) {
-
     case '[object Map]':
       baseCurValue = strMapToObj(baseCurValue)
       refCur = strMapToObj(refCur)
