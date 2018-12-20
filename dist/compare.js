@@ -90,7 +90,7 @@
 /*!**********************!*\
   !*** ./commonVar.js ***!
   \**********************/
-/*! exports provided: memory, deletedList, addedList, changedList, objectTreeStack */
+/*! exports provided: memory, deletedList, addedList, changedList, objectTreeQueue, getCount, addCount */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -99,13 +99,25 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "deletedList", function() { return deletedList; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "addedList", function() { return addedList; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "changedList", function() { return changedList; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "objectTreeStack", function() { return objectTreeStack; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "objectTreeQueue", function() { return objectTreeQueue; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getCount", function() { return getCount; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "addCount", function() { return addCount; });
 // 函数记忆, 用于创建对象
-var memory = new Set();
+var memory = new Set(); // 结果列表
+
 var deletedList = [];
 var addedList = [];
-var changedList = [];
-var objectTreeStack = [];
+var changedList = []; // 对象树存储队列
+
+var objectTreeQueue = []; // 当前对比次数
+
+var count = 0;
+var getCount = function getCount() {
+  return count;
+};
+var addCount = function addCount() {
+  return ++count;
+};
 
 /***/ }),
 
@@ -119,6 +131,8 @@ var objectTreeStack = [];
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _compareNextLayer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./compareNextLayer */ "./compareNextLayer.js");
+/* harmony import */ var _commonVar__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./commonVar */ "./commonVar.js");
+
  // 快照比较, 防止 const a = {b: 1}, a.c = 2
 // 路径
 // 一定要比较到基本类型
@@ -138,6 +152,10 @@ __webpack_require__.r(__webpack_exports__);
 
   var baseQueue = [];
   var refQueue = [];
+  _commonVar__WEBPACK_IMPORTED_MODULE_1__["deletedList"].push({});
+  _commonVar__WEBPACK_IMPORTED_MODULE_1__["addedList"].push({});
+  _commonVar__WEBPACK_IMPORTED_MODULE_1__["changedList"].push({}); // 将子项入队
+
   baseQueue.push({
     key: baseTreeName,
     value: baseTree
@@ -277,7 +295,8 @@ var eq = function eq(item, index) {
   }
 
   if (_utils__WEBPACK_IMPORTED_MODULE_0__["toString"].call(baseCurItem) !== _utils__WEBPACK_IMPORTED_MODULE_0__["toString"].call(refCurItem)) {
-    _commonVar__WEBPACK_IMPORTED_MODULE_1__["changedList"].push(['【更新了】:', name + item, '\nbefore: ', baseCurItem, '\nafter: ', refCurItem]);
+    var i = Object(_commonVar__WEBPACK_IMPORTED_MODULE_1__["getCount"])();
+    _commonVar__WEBPACK_IMPORTED_MODULE_1__["changedList"][i][name + item] = "".concat(baseCurItem, " -> ").concat(refCurItem);
     return;
   } // 类似 'abc' 与 new String('abc')
 
@@ -285,6 +304,7 @@ var eq = function eq(item, index) {
   switch (_utils__WEBPACK_IMPORTED_MODULE_0__["toString"].call(baseCurItem)) {
     case '[object RegExp]':
     case '[object String]':
+    case '[object Function]':
       if ('' + baseCurItem === '' + refCurItem) {
         return;
       }
@@ -304,7 +324,6 @@ var eq = function eq(item, index) {
 
     case '[object Date]':
     case '[object Boolean]':
-    case '[object Function]':
       if (+baseCurItem === +refCurItem) {
         return;
       }
@@ -324,7 +343,9 @@ var eq = function eq(item, index) {
   }
 
   if (baseCurItem !== refCurItem) {
-    _commonVar__WEBPACK_IMPORTED_MODULE_1__["changedList"].push(['【更新了】:', name + key, '\nbefore: ', baseCurItem, '\nafter: ', refCurItem]);
+    var _i2 = Object(_commonVar__WEBPACK_IMPORTED_MODULE_1__["getCount"])();
+
+    _commonVar__WEBPACK_IMPORTED_MODULE_1__["changedList"][_i2][name + item] = "".concat(baseCurItem, " -> ").concat(refCurItem);
   }
 };
 
@@ -342,14 +363,14 @@ var objectHandle = function objectHandle() {
       baseQueue.splice(baseQueueLen, 1);
       refQueue.splice(refQueue.indexOf(key), 1);
     }
-  } // 层级: [路径] \n 新增: [新增] \n 删除: [删除]
+  } // log
 
 
   baseQueue.forEach(function (item) {
-    _commonVar__WEBPACK_IMPORTED_MODULE_1__["deletedList"].push(['【删除了】: ', name + item, '\n值为: ', baseCurValue[item]]);
+    return _commonVar__WEBPACK_IMPORTED_MODULE_1__["deletedList"][Object(_commonVar__WEBPACK_IMPORTED_MODULE_1__["getCount"])()][name + item] = baseCurValue[item];
   });
   refQueue.forEach(function (item) {
-    _commonVar__WEBPACK_IMPORTED_MODULE_1__["addedList"].push(['【新增了】: ', name + item, '\n值为: ', refCur[item]]);
+    return _commonVar__WEBPACK_IMPORTED_MODULE_1__["addedList"][Object(_commonVar__WEBPACK_IMPORTED_MODULE_1__["getCount"])()][name + item] = refCur[item];
   }); // 比较
 
   common.forEach(function (item, index) {
@@ -377,10 +398,10 @@ var arrayHandle = function arrayHandle() {
 
 
   baseQueue.forEach(function (item, index) {
-    _commonVar__WEBPACK_IMPORTED_MODULE_1__["deletedList"].push(['【删除了】: ', name + index, '\n值为: ', item]);
+    return _commonVar__WEBPACK_IMPORTED_MODULE_1__["deletedList"][Object(_commonVar__WEBPACK_IMPORTED_MODULE_1__["getCount"])()][name + index] = item;
   });
   refQueue.forEach(function (item, index) {
-    _commonVar__WEBPACK_IMPORTED_MODULE_1__["addedList"].push(['【新增了】: ', name + index, '\n值为: ', item]);
+    return _commonVar__WEBPACK_IMPORTED_MODULE_1__["addedList"][Object(_commonVar__WEBPACK_IMPORTED_MODULE_1__["getCount"])()][name + index] = item;
   }); // 比较
 
   common.forEach(function (item, index) {
@@ -445,12 +466,7 @@ var arrayHandle = function arrayHandle() {
 var frag = document.createDocumentFragment();
 var div = document.createElement('div');
 div.className = 'snapshot-wrap';
-div.style = 'position: absolute; top: 10px; right: 10px; z-index: 99999;';
-var button = document.createElement('button');
-button.className = 'btn-snapshot';
-button.style = 'color: red; border: 1px solid currentColor; background-color: transparent;';
-button.textContent = '创建快照';
-div.appendChild(button);
+div.innerHTML = "\n<style>\n.snapshot-wrap {\n  border: 1px solid red;\n  position: absolute;\n  top: 10px;\n  right: 10px;\n  z-index: 99999;\n}\n\n.snapshot-wrap .btn-snapshot {\n  border: none;\n  border-bottom: 1px solid currentColor;\n  background-color: transparent;\n}\n\n.snapshot-wrap .snapshot-row:nth-last-of-type(1) {\n  text-align: center;\n}\n\n.snapshot-wrap .btn {\n  width: 100%;\n  color: red;\n}\n\n.snapshot-wrap .btn:active,\n.snapshot-wrap .btn:active {\n  background-color: #ccc;\n}\n</style>\n<div class=\"snapshot-row\">\n<button class=\"btn btn-snapshot\">\u521B\u5EFA\u5FEB\u7167[<span class=\"txt-count\">0</span>]</button>\n</div>\n<div class=\"snapshot-row\">\n<button class=\"btn btn-export\">\u5BFC&nbsp;&nbsp;\u51FA</button>\n</div>\n";
 frag.appendChild(div);
 document.body.appendChild(div);
 
@@ -496,7 +512,7 @@ function deepCopy(obj) {
 
   for (var key in obj) {
     if (obj.hasOwnProperty(key)) {
-      newObj[key] = _typeof(obj[key]) === 'object' ? deepCopy(obj[key]) : obj[key];
+      newObj[key] = _typeof(obj[key]) === 'object' && obj[key] !== null ? deepCopy(obj[key]) : obj[key];
     }
   }
 
@@ -524,36 +540,53 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
- // 输入tree名称
+
+var $btnSnapshot = document.querySelector('.snapshot-wrap .btn-snapshot');
+var $btnExport = document.querySelector('.snapshot-wrap .btn-export');
+var $txtCount = document.querySelector('.snapshot-wrap .txt-count'); // 输入tree名称
 
 var targetTree = null;
 
 window.getCompareTreeObject = function (obj) {
   !targetTree && (targetTree = obj);
-};
+}; // 点击创建快照处理
 
-var clickHandle = function clickHandle() {
+
+var snapshotHandle = function snapshotHandle() {
   if (!targetTree) {
     throw new Error('还未在rq函数中调用 window.getCompareTreeObject()!');
   } // 创建快照
 
 
-  var tree = Object(_deepCopy__WEBPACK_IMPORTED_MODULE_3__["default"])(targetTree);
-  _commonVar__WEBPACK_IMPORTED_MODULE_2__["memory"].clear();
-  _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeStack"].push(tree); // 每两个, 下载一次log日志
+  var tree = Object(_deepCopy__WEBPACK_IMPORTED_MODULE_3__["default"])(targetTree); // 清楚记忆
 
-  if (_commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeStack"].length === 2) {
-    var treeBase = _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeStack"].shift();
-    var treeRef = _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeStack"].shift(); // 对比
+  _commonVar__WEBPACK_IMPORTED_MODULE_2__["memory"].clear(); // 入队
 
-    Object(_compare__WEBPACK_IMPORTED_MODULE_1__["default"])(treeBase, treeRef, 'root'); // 报告
+  _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeQueue"].push(tree); // 更新数量
 
-    Object(_log__WEBPACK_IMPORTED_MODULE_4__["default"])();
-  }
-};
+  $txtCount.textContent = _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeQueue"].length;
+}; // 点击导出处理
 
-var $btn = document.querySelector('.btn-snapshot');
-$btn.addEventListener('click', clickHandle, false);
+
+var exportHandle = function exportHandle() {
+  // 对比
+  var l = _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeQueue"].length;
+
+  while (Object(_commonVar__WEBPACK_IMPORTED_MODULE_2__["getCount"])() < l - 1) {
+    Object(_compare__WEBPACK_IMPORTED_MODULE_1__["default"])(_commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeQueue"][Object(_commonVar__WEBPACK_IMPORTED_MODULE_2__["getCount"])()], _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeQueue"][Object(_commonVar__WEBPACK_IMPORTED_MODULE_2__["getCount"])() + 1], 'root');
+    Object(_commonVar__WEBPACK_IMPORTED_MODULE_2__["addCount"])();
+  } // 报告
+
+
+  Object(_log__WEBPACK_IMPORTED_MODULE_4__["default"])(); // 重置
+
+  _commonVar__WEBPACK_IMPORTED_MODULE_2__["objectTreeQueue"].length = 0;
+  $txtCount.textContent = 0;
+}; // 监听
+
+
+$btnSnapshot.addEventListener('click', snapshotHandle, false);
+$btnExport.addEventListener('click', exportHandle, false);
 
 /***/ }),
 
@@ -567,28 +600,111 @@ $btn.addEventListener('click', clickHandle, false);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _commonVar__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./commonVar */ "./commonVar.js");
- // 报告
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+
+var str = '';
+
+var filterRepeat = function filterRepeat(before, after) {
+  var beforeItem = before.split('->');
+  var beforeLastOne = beforeItem[beforeItem.length - 1].trim();
+  var afterItem = after.split('->');
+  var afterFirstOne = afterItem[0].trim();
+
+  if (beforeLastOne === afterFirstOne) {
+    return before + ' ->' + afterItem[1];
+  }
+
+  return before + after;
+};
+
+var insertStr = function insertStr(diff, key, i) {
+  var diffItem = diff[key].split('->');
+  var curCount = diffItem.length;
+  var targetCount = i + 2;
+
+  while (curCount++ < targetCount) {
+    diff[key] = "".concat(diffItem[0], "-> ") + diff[key];
+  }
+}; // 更新处理
+
+
+var changeListHandle = function changeListHandle() {
+  var ret = _commonVar__WEBPACK_IMPORTED_MODULE_0__["changedList"].reduce(function (acc, cur, i, arr) {
+    var common = {};
+    var diff = {};
+    var acc_copy = Object.assign({}, acc);
+    var cur_copy = Object.assign({}, cur); // 交集
+
+    Object.keys(cur_copy).forEach(function (key) {
+      if (acc_copy[key]) {
+        common[key] = filterRepeat(acc_copy[key], cur_copy[key]);
+        delete cur_copy[key];
+        delete acc_copy[key];
+      }
+    }); // 不同
+
+    Object.keys(acc_copy).forEach(function (key) {
+      var item = acc_copy[key].split('->');
+      diff[key] = acc_copy[key] + " -> ".concat(item[item.length - 1].trim()); // 补充
+
+      insertStr(diff, key, i);
+      delete acc_copy[key];
+    });
+    Object.keys(cur_copy).forEach(function (key) {
+      diff[key] = cur_copy[key]; // 补充
+
+      insertStr(diff, key, i);
+      delete cur_copy[key];
+    });
+    return _objectSpread({}, common, diff);
+  }, {});
+  str += "\r\n========================= \u603B\u5171".concat(_commonVar__WEBPACK_IMPORTED_MODULE_0__["changedList"].length, "\u6B21\u5FEB\u7167, \u66F4\u65B0\u60C5\u51B5\u5982\u4E0B: ===========================\r\n");
+
+  for (var key in ret) {
+    str += "\u3010\u66F4\u65B0\u4E86\u3011: ".concat(key, "\n\u503C\u4E3A: ").concat(ret[key], "\n");
+  }
+}; // 增删处理
+
+
+var addedDeletedListHandle = function addedDeletedListHandle() {
+  var l = _commonVar__WEBPACK_IMPORTED_MODULE_0__["deletedList"].length;
+  var i = 0;
+
+  while (i++ < l) {
+    str += "\r\n========================= \u76F8\u5BF9\u4E8E\u7B2C".concat(i, "\u6B21\u5FEB\u7167, \u7B2C").concat(i + 1, "\u6B21\u5FEB\u7167\u60C5\u51B5\u5982\u4E0B: ===========================\r\n"); // 删除
+
+    var deletedItem = _commonVar__WEBPACK_IMPORTED_MODULE_0__["deletedList"].shift();
+
+    for (var key in deletedItem) {
+      str += "\u3010\u5220\u9664\u4E86\u3011: ".concat(key, "\n\u503C\u4E3A: ").concat(deletedItem[key], "\n");
+    } // 增加
+
+
+    var addedItem = _commonVar__WEBPACK_IMPORTED_MODULE_0__["addedList"].shift();
+
+    for (var _key in addedItem) {
+      str += "\u3010\u589E\u52A0\u4E86\u3011: ".concat(_key, "\n\u503C\u4E3A: ").concat(deletedItem[_key], "\n");
+    }
+  }
+}; // 报告
+
 
 /* harmony default export */ __webpack_exports__["default"] = (function () {
-  var str = '';
-  _commonVar__WEBPACK_IMPORTED_MODULE_0__["deletedList"].forEach(function (item) {
-    str += "".concat(item.join(''), "\n");
-  });
-  str += "\r\n=========================\u5206\u5272\u7EBF===========================\r\n";
-  _commonVar__WEBPACK_IMPORTED_MODULE_0__["addedList"].forEach(function (item) {
-    str += "".concat(item.join(''), "\n");
-  });
-  str += "\r\n=========================\u5206\u5272\u7EBF===========================\r\n";
-  _commonVar__WEBPACK_IMPORTED_MODULE_0__["changedList"].forEach(function (item) {
-    str += "".concat(item.join(''), "\n");
-  }); // 生成txt下载
+  // 更新部分
+  changeListHandle();
+  addedDeletedListHandle(); // 生成txt下载
 
   var blob = new Blob([str]);
   var a = document.createElement('a');
   a.href = window.URL.createObjectURL(blob);
   a.download = 'log.txt';
   a.textContent = 'Download';
-  a.click();
+  a.click(); // 重置
+
+  str = '';
 });
 
 /***/ }),

@@ -31,7 +31,7 @@ export default function deepCopy (obj) {
   let newObj = obj instanceof Array ? [] : {}
   for (let key in obj) {
     if (obj.hasOwnProperty(key)) {
-      newObj[key] = typeof obj[key] === 'object' ? deepCopy(obj[key]) : obj[key]
+      newObj[key] = typeof obj[key] === 'object' && obj[key] !== null ? deepCopy(obj[key]) : obj[key]
     }
   }
   return newObj

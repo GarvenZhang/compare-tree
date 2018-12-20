@@ -1,11 +1,11 @@
 import {
-  toString,
-  isDOM
+  toString
 } from './utils'
 import {
   deletedList,
   addedList,
-  changedList
+  changedList,
+  getCount
 } from './commonVar'
 
 let baseCur
@@ -81,13 +81,15 @@ const eq = (item, index) => {
   }
 
   if (toString.call(baseCurItem) !== toString.call(refCurItem)) {
-    changedList.push(['【更新了】:', name + item, '\nbefore: ', baseCurItem, '\nafter: ', refCurItem])
+    const i = getCount()
+    changedList[i][name + item] = `${baseCurItem} -> ${refCurItem}`
     return
   }
   // 类似 'abc' 与 new String('abc')
   switch (toString.call(baseCurItem)) {
     case '[object RegExp]':
     case '[object String]':
+    case '[object Function]':
       if ('' + baseCurItem === '' + refCurItem) {
         return
       }
@@ -104,7 +106,6 @@ const eq = (item, index) => {
 
     case '[object Date]':
     case '[object Boolean]':
-    case '[object Function]':
       if (+baseCurItem === +refCurItem) {
         return
       }
@@ -123,7 +124,8 @@ const eq = (item, index) => {
   }
 
   if (baseCurItem !== refCurItem) {
-    changedList.push(['【更新了】:', name + key, '\nbefore: ', baseCurItem, '\nafter: ', refCurItem])
+    const i = getCount()
+    changedList[i][name + item] = `${baseCurItem} -> ${refCurItem}`
   }
 }
 
@@ -142,13 +144,9 @@ const objectHandle = () => {
     }
   }
 
-  // 层级: [路径] \n 新增: [新增] \n 删除: [删除]
-  baseQueue.forEach(function (item) {
-    deletedList.push(['【删除了】: ', name + item, '\n值为: ', baseCurValue[item]])
-  })
-  refQueue.forEach(function (item) {
-    addedList.push(['【新增了】: ', name + item, '\n值为: ', refCur[item]])
-  })
+  // log
+  baseQueue.forEach(item => deletedList[getCount()][name + item] = baseCurValue[item])
+  refQueue.forEach(item => addedList[getCount()][name + item] = refCur[item])
 
   // 比较
   common.forEach((item, index) => eq(item, index))
@@ -174,12 +172,8 @@ const arrayHandle = () => {
   }
 
   // log
-  baseQueue.forEach(function (item, index) {
-    deletedList.push(['【删除了】: ', name + index, '\n值为: ', item])
-  })
-  refQueue.forEach(function (item, index) {
-    addedList.push(['【新增了】: ', name + index, '\n值为: ', item])
-  })
+  baseQueue.forEach((item, index) => deletedList[getCount()][name + index] = item)
+  refQueue.forEach((item, index) => addedList[getCount()][name + index] = item)
 
   // 比较
   common.forEach((item, index) => eq(item, index))

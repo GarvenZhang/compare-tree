@@ -1,4 +1,9 @@
 import compareNextLayer from './compareNextLayer'
+import {
+  deletedList,
+  addedList,
+  changedList
+} from './commonVar'
 
 // 快照比较, 防止 const a = {b: 1}, a.c = 2
 // 路径
@@ -18,7 +23,11 @@ export default function (baseTree, refTree, baseTreeName) {
 
   let baseQueue = []
   let refQueue = []
+  deletedList.push({})
+  addedList.push({})
+  changedList.push({})
 
+  // 将子项入队
   baseQueue.push({
     key: baseTreeName,
     value: baseTree
