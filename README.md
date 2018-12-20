@@ -34,6 +34,6 @@
 
 ## 效果图
 
-<img src='./doc/v2.0.1-效果一.png' alt='v2.0.1-效果一.png' width='50%'/>
+<img src='./doc/v3.0.0-效果一.png' alt='v3.0.0-效果一.png' width='50%'/>
 
-<img src='./doc/v2.0.1-效果二.png' alt='v2.0.1-效果二.png' width='50%'/>
+<img src='./doc/v3.0.0-效果二.png' alt='v3.0.0-效果二.png' width='50%'/>
